@@ -1,22 +1,25 @@
 /*
- HTML Clean for jQuery
- Anthony Johnston
- http://www.antix.co.uk
+HTML Clean for jQuery   
+Anthony Johnston
+http://www.antix.co.uk    
+    
+version 1.4.2
 
- version 1.4.0
+$Revision$
 
- $Revision: 99 $
+requires jQuery http://jquery.com   
 
- requires jQuery http://jquery.com
+Use and distibution http://www.opensource.org/licenses/bsd-license.php
 
- Use and distibution http://www.opensource.org/licenses/bsd-license.php
-
- 2010-04-02 allowedTags/removeTags added (white/black list) thanks to David Wartian (Dwartian)
- 2010-06-30 replaceStyles added for replacement of bold, italic, super and sub styles on a tag
- 2012-04-30 allowedAttributes added, an array of attributed allowed on the elements
- 2013-02-25 now will push non-inline elements up the stack if nested in an inline element
- 2013-02-25 comment element support added, removed by default, see AllowComments in options
- */
+2010-04-02 allowedTags/removeTags added (white/black list) thanks to David Wartian (Dwartian)
+2010-06-30 replaceStyles added for replacement of bold, italic, super and sub styles on a tag
+2012-04-30 allowedAttributes added, an array of attributed allowed on the elements
+2013-02-25 now will push non-inline elements up the stack if nested in an inline element
+2013-02-25 comment element support added, removed by default, see AllowComments in options
+2013-08-22 removeTagsAndContent added, an array of tag names to do just that
+2016-03-11 allowBreakAsLastChild added, 
+2016-03-15 jshint recommendations, no functional changes
+*/
 (function ($) {
     $.fn.htmlClean = function (options) {
         // iterate and html clean each matched element
@@ -44,24 +47,24 @@
 
         if (options.bodyOnly) {
             // check for body tag
-            if (tagMatch = /<body[^>]*>((\n|.)*)<\/body>/i.exec(html)) {
+            if ((tagMatch = /<body[^>]*>((\n|.)*)<\/body>/i.exec(html)) !== null) {
                 html = tagMatch[1];
             }
         }
         html = html.concat("<xxx>"); // ensure last element/text is found
         var lastIndex;
 
-        while (tagMatch = tagsRE.exec(html)) {
-            var tag = tagMatch[6]
-                ? new Tag("--", null, tagMatch[6], options)
-                : new Tag(tagMatch[4], tagMatch[2], tagMatch[5], options);
+        while ((tagMatch = tagsRE.exec(html)) !== null) {
+          var tag = tagMatch[6] ?
+            new Tag("--", null, tagMatch[6], options) :
+            new Tag(tagMatch[4], tagMatch[2], tagMatch[5], options);
 
             // add the text
             var text = html.substring(lastIndex, tagMatch.index);
             if (text.length > 0) {
                 var child = container.children[container.children.length - 1];
-                if (container.children.length > 0
-                    && isText(child = container.children[container.children.length - 1])) {
+                if (container.children.length > 0 &&
+                  isText(child = container.children[container.children.length - 1])) {
                     // merge text
                     container.children[container.children.length - 1] = child.concat(text);
                 } else {
@@ -82,11 +85,11 @@
 
                 // add attributes
                 var attrMatch;
-                while (attrMatch = attrsRE.exec(tag.rawAttributes)) {
+                while ((attrMatch = attrsRE.exec(tag.rawAttributes)) !== null) {
 
                     // check style attribute and do replacements
-                    if (attrMatch[1].toLowerCase() == "style"
-                        && options.replaceStyles) {
+                  if (attrMatch[1].toLowerCase() == "style" &&
+                    options.replaceStyles) {
 
                         var renderParent = !tag.isInline;
                         for (var i = 0; i < options.replaceStyles.length; i++) {
@@ -106,24 +109,25 @@
                         }
                     }
 
-                    if (tag.allowedAttributes != null
-                        && (tag.allowedAttributes.length == 0
-                        || $.inArray(attrMatch[1], tag.allowedAttributes) > -1)) {
+                    if (tag.allowedAttributes !== null &&
+                      (tag.allowedAttributes.length === 0 ||
+                      $.inArray(attrMatch[1], tag.allowedAttributes) > -1)) {
                         element.attributes.push(new Attribute(attrMatch[1], attrMatch[2]));
                     }
                 }
                 // add required empty ones
-                $.each(tag.requiredAttributes, function () {
-                    var name = this.toString();
-                    if (!element.hasAttribute(name)) element.attributes.push(new Attribute(name, ""));
-                });
+                for (var ai = 0; ai < tag.requiredAttributes.length; ai++) {
+                    var name = tag.requiredAttributes[ai];
+                    if (!element.hasAttribute(name))
+                        element.attributes.push(new Attribute(name, ""));
+                }
 
                 // check for replacements
                 for (var repIndex = 0; repIndex < options.replace.length; repIndex++) {
                     for (var tagIndex = 0; tagIndex < options.replace[repIndex][0].length; tagIndex++) {
                         var byName = typeof (options.replace[repIndex][0][tagIndex]) == "string";
-                        if ((byName && options.replace[repIndex][0][tagIndex] == tag.name)
-                            || (!byName && options.replace[repIndex][0][tagIndex].test(tagMatch))) {
+                        if ((byName && options.replace[repIndex][0][tagIndex] == tag.name) ||
+                          (!byName && options.replace[repIndex][0][tagIndex].test(tagMatch))) {
 
                             // set the name to the replacement
                             tag.rename(options.replace[repIndex][1]);
@@ -138,14 +142,15 @@
                 var add = true;
                 if (!container.isRoot) {
                     if (container.tag.isInline && !tag.isInline) {
-                        if (add = popToContainer(stack)) {
+                        if ((add = popToContainer(stack))) {
                             container = stack[stack.length - 1];
                         }
-                    } else if (container.tag.disallowNest && tag.disallowNest
-                        && !tag.requiredParent) {
+                    } else if (container.tag.disallowNest &&
+                      tag.disallowNest &&
+                      !tag.requiredParent) {
                         add = false;
                     } else if (tag.requiredParent) {
-                        if (add = popToTagName(stack, tag.requiredParent)) {
+                        if ((add = popToTagName(stack, tag.requiredParent))) {
                             container = stack[stack.length - 1];
                         }
                     }
@@ -157,7 +162,7 @@
                     if (tag.toProtect) {
                         // skip to closing tag
                         var tagMatch2;
-                        while (tagMatch2 = tagsRE.exec(html)) {
+                        while ((tagMatch2 = tagsRE.exec(html)) !== null) {
                             var tag2 = new Tag(tagMatch2[4], tagMatch2[1], tagMatch2[5], options);
                             if (tag2.isClosing && tag2.name == tag.name) {
                                 element.children.push(RegExp.leftContext.substring(lastIndex));
@@ -188,6 +193,8 @@
         allowedTags: [],
         // remove tags in this array, (black list), contents still rendered
         removeTags: ["basefont", "center", "dir", "font", "frame", "frameset", "iframe", "isindex", "menu", "noframes", "s", "strike", "u"],
+        // remove tags and content
+        removeTagsAndContent: [],
         // array of [attributeName], [optional array of allowed on elements] e.g. [["id"], ["style", ["p", "dl"]]] // allow all elements to have id and allow style on 'p' and 'dl'
         allowedAttributes: [],
         // array of attribute names to remove on all elements in addition to those not in tagAttributes e.g ["width", "height"]
@@ -198,7 +205,7 @@
         format: false,
         // format indent to start on
         formatIndent: 0,
-        // tags to replace, and what to replace with, tag name or regex to match the tag and attributes
+        // tags to replace, and what to replace with, tag name or regex to match the tag and attributes 
         replace: [
             [["b", "big"], "strong"],
             [["i"], "em"]
@@ -211,7 +218,8 @@
             [/vertical-align:\s*sub/i, "sub"]
         ],
         allowComments: false,
-        allowEmpty: []
+        allowEmpty: [],
+        allowBreakAsLastChild: false
     };
 
     function applyFormat(element, options, output, indent) {
@@ -222,7 +230,7 @@
     }
 
     function render(element, options) {
-        var output = [], empty = element.attributes.length == 0, indent = 0;
+        var output = [], empty = element.attributes.length === 0, indent = 0;
 
         if (element.tag.isComment) {
             if (options.allowComments) {
@@ -235,10 +243,12 @@
         } else {
 
             // don't render if not in allowedTags or in removeTags
+            var renderChildren
+                = (options.removeTagsAndContent.length === 0 || $.inArray(element.tag.name, options.removeTagsAndContent) == -1);
             var renderTag
-                = element.tag.render
-                && (options.allowedTags.length == 0 || $.inArray(element.tag.name, options.allowedTags) > -1)
-                && (options.removeTags.length == 0 || $.inArray(element.tag.name, options.removeTags) == -1);
+                = renderChildren && element.tag.render &&
+                (options.allowedTags.length === 0 || $.inArray(element.tag.name, options.allowedTags) > -1) &&
+                (options.removeTags.length === 0 || $.inArray(element.tag.name, options.removeTags) == -1);
 
             if (!element.isRoot && renderTag) {
 
@@ -251,19 +261,20 @@
                         var value = m[2];
                         var valueQuote = m[1] || "'";
 
-                        // check for classes allowed
+                        // check for classes allowed                    
                         if (this.name == "class" && options.allowedClasses.length > 0) {
                             value =
-                                $.grep(value.split(" "), function (c) {
-                                    return $.grep(options.allowedClasses, function (a) {
-                                            return a == c
-                                                || (a[0] == c && (a.length == 1 || $.inArray(element.tag.name, a[1]) > -1));
-                                        }).length > 0;
-                                })
-                                    .join(" ");
+                            $.grep(value.split(" "), function (c) {
+                                return $.grep(options.allowedClasses, function (a) {
+                                  return a == c ||
+                                    (a[0] == c && (a.length == 1 || $.inArray(element.tag.name, a[1]) > -1));
+                                }).length > 0;
+                            })
+                            .join(" ");
                         }
 
-                        if (value != null && (value.length > 0 || $.inArray(this.name, element.tag.requiredAttributes) > -1)) {
+                        if (value !== null &&
+                          (value.length > 0 || $.inArray(this.name, element.tag.requiredAttributes) > -1)) {
                             output.push(" ");
                             output.push(this.name);
                             output.push("=");
@@ -276,32 +287,33 @@
             }
 
             if (element.tag.isSelfClosing) {
-                // self closing
+                // self closing 
                 if (renderTag) output.push(" />");
                 empty = false;
             } else if (element.tag.isNonClosing) {
                 empty = false;
-            } else {
+            } else if (renderChildren) {
                 if (!element.isRoot && renderTag) {
                     // close
                     output.push(">");
                 }
 
                 indent = options.formatIndent++;
+                var outputChildren = [];
 
                 // render children
                 if (element.tag.toProtect) {
                     outputChildren = $.htmlClean.trim(element.children.join("")).replace(/<br>/ig, "\n");
                     output.push(outputChildren);
-                    empty = outputChildren.length == 0;
+                    empty = outputChildren.length === 0;
                 } else {
-                    var outputChildren = [];
+                    outputChildren = [];
                     for (var i = 0; i < element.children.length; i++) {
                         var child = element.children[i];
                         var text = $.htmlClean.trim(textClean(isText(child) ? child : child.childrenToString()));
                         if (isInline(child)) {
-                            if (i > 0 && text.length > 0
-                                && (startsWithWhitespace(child) || endsWithWhitespace(element.children[i - 1]))) {
+                          if (i > 0 && text.length > 0 &&
+                            (startsWithWhitespace(child) || endsWithWhitespace(element.children[i - 1]))) {
                                 outputChildren.push(" ");
                             }
                         }
@@ -310,8 +322,8 @@
                                 outputChildren.push(text);
                             }
                         } else {
-                            // don't allow a break to be the last child
-                            if (i != element.children.length - 1 || child.tag.name != "br") {
+                            // only allow break as last child if allowBreakAsLastChild option is set
+                            if (i !== element.children.length - 1 || child.tag.name !== "br" || (options.allowBreakAsLastChild && child.tag.name === "br")) {
                                 if (options.format) applyFormat(child, options, outputChildren, indent);
                                 outputChildren = outputChildren.concat(render(child, options));
                             }
@@ -364,8 +376,8 @@
         var element = stack[stack.length - index];
         if (test(element)) {
             return true;
-        } else if (stack.length - index > 0
-            && pop(stack, test, index + 1)) {
+        } else if (stack.length - index > 0 &&
+          pop(stack, test, index + 1)) {
             stack.pop();
             return true;
         }
@@ -421,7 +433,7 @@
                 this.isComment = false;
                 this.isSelfClosing = $.inArray(this.name, tagSelfClosing) > -1;
                 this.isNonClosing = $.inArray(this.name, tagNonClosing) > -1;
-                this.isClosing = (close != undefined && close.length > 0);
+                this.isClosing = (close !== undefined && close.length > 0);
 
                 this.isInline = $.inArray(this.name, tagInline) > -1;
                 this.disallowNest = $.inArray(this.name, tagDisallowNest) > -1;
@@ -444,9 +456,9 @@
                     for (var i = 0; i < options.allowedAttributes.length; i++) {
                         var attrName = options.allowedAttributes[i][0];
                         if ((
-                                options.allowedAttributes[i].length == 1
-                                || $.inArray(this.name, options.allowedAttributes[i][1]) > -1
-                            ) && $.inArray(attrName, cacheItem) == -1) {
+                            options.allowedAttributes[i].length == 1 ||
+                          $.inArray(this.name, options.allowedAttributes[i][1]) > -1
+                        ) && $.inArray(attrName, cacheItem) == -1) {
                             cacheItem.push(attrName);
                         }
                     }
@@ -502,14 +514,14 @@
         return text.substring($.htmlClean.trimStartIndex(text));
     };
     $.htmlClean.trimStartIndex = function (text) {
-        for (var start = 0; start < text.length - 1 && $.htmlClean.isWhitespace(text.charAt(start)); start++);
+        for (var start = 0; start < text.length - 1 && $.htmlClean.isWhitespace(text.charAt(start)) ; start++);
         return start;
     };
     $.htmlClean.trimEnd = function (text) {
         return text.substring(0, $.htmlClean.trimEndIndex(text));
     };
     $.htmlClean.trimEndIndex = function (text) {
-        for (var end = text.length - 1; end >= 0 && $.htmlClean.isWhitespace(text.charAt(end)); end--);
+        for (var end = text.length - 1; end >= 0 && $.htmlClean.isWhitespace(text.charAt(end)) ; end--);
         return end + 1;
     };
     // checks a char is white space or not
@@ -545,37 +557,37 @@
     var tagNonClosing = ["!doctype", "?xml"];
     // attributes allowed on tags
     var tagAttributes = [
-        ["class"],  // default, for all tags not mentioned
-        "?xml", [],
-        "!doctype", [],
-        "a", ["accesskey", "class", "href", "name", "title", "rel", "rev", "type", "tabindex"],
-        "abbr", ["class", "title"],
-        "acronym", ["class", "title"],
-        "blockquote", ["cite", "class"],
-        "button", ["class", "disabled", "name", "type", "value"],
-        "del", ["cite", "class", "datetime"],
-        "form", ["accept", "action", "class", "enctype", "method", "name"],
-        "iframe", ["class", "height", "name", "sandbox", "seamless", "src", "srcdoc", "width"],
-        "input", ["accept", "accesskey", "alt", "checked", "class", "disabled", "ismap", "maxlength", "name", "size", "readonly", "src", "tabindex", "type", "usemap", "value"],
-        "img", ["alt", "class", "height", "src", "width"],
-        "ins", ["cite", "class", "datetime"],
-        "label", ["accesskey", "class", "for"],
-        "legend", ["accesskey", "class"],
-        "link", ["href", "rel", "type"],
-        "meta", ["content", "http-equiv", "name", "scheme", "charset"],
-        "map", ["name"],
-        "optgroup", ["class", "disabled", "label"],
-        "option", ["class", "disabled", "label", "selected", "value"],
-        "q", ["class", "cite"],
-        "script", ["src", "type"],
-        "select", ["class", "disabled", "multiple", "name", "size", "tabindex"],
-        "style", ["type"],
-        "table", ["class", "summary"],
-        "th", ["class", "colspan", "rowspan"],
-        "td", ["class", "colspan", "rowspan"],
-        "textarea", ["accesskey", "class", "cols", "disabled", "name", "readonly", "rows", "tabindex"],
-        "param", ["name", "value"],
-        "embed", ["height", "src", "type", "width"]
+            ["class"],  // default, for all tags not mentioned
+            "?xml", [],
+            "!doctype", [],
+            "a", ["accesskey", "class", "href", "name", "title", "rel", "rev", "type", "tabindex"],
+            "abbr", ["class", "title"],
+            "acronym", ["class", "title"],
+            "blockquote", ["cite", "class"],
+            "button", ["class", "disabled", "name", "type", "value"],
+            "del", ["cite", "class", "datetime"],
+            "form", ["accept", "action", "class", "enctype", "method", "name"],
+            "iframe", ["class", "height", "name", "sandbox", "seamless", "src", "srcdoc", "width"],
+            "input", ["accept", "accesskey", "alt", "checked", "class", "disabled", "ismap", "maxlength", "name", "size", "readonly", "src", "tabindex", "type", "usemap", "value"],
+            "img", ["alt", "class", "height", "src", "width"],
+            "ins", ["cite", "class", "datetime"],
+            "label", ["accesskey", "class", "for"],
+            "legend", ["accesskey", "class"],
+            "link", ["href", "rel", "type"],
+            "meta", ["content", "http-equiv", "name", "scheme", "charset"],
+            "map", ["name"],
+            "optgroup", ["class", "disabled", "label"],
+            "option", ["class", "disabled", "label", "selected", "value"],
+            "q", ["class", "cite"],
+            "script", ["src", "type"],
+            "select", ["class", "disabled", "multiple", "name", "size", "tabindex"],
+            "style", ["type"],
+            "table", ["class", "summary"],
+            "th", ["class", "colspan", "rowspan"],
+            "td", ["class", "colspan", "rowspan"],
+            "textarea", ["accesskey", "class", "cols", "disabled", "name", "readonly", "rows", "tabindex"],
+            "param", ["name", "value"],
+            "embed", ["height", "src", "type", "width"]
     ];
     var tagAttributesRequired = [[], "img", ["alt"]];
     // white space chars

@@ -148,11 +148,13 @@ function Snapshooter(root) {
 		result = '<' + element.tagName;
 		attributes = element.attributes;
 
+		var idToBe = createID(element);
+
 		for (i = 0; i < attributes.length; ++i) {
 			attr = attributes[i];
 
 			if (attr.name.toLowerCase() === 'id') {
-				value = createID(element);
+				value = idToBe;
 				idSeen = true;
 			} else {
 				value = attr.value;
@@ -162,8 +164,10 @@ function Snapshooter(root) {
 		}
 
 		if (!idSeen) {
-			result += ' id="' + createID(element) + '"';
+			result += ' id="' + idToBe + '"';
 		}
+
+		result += ' className={style.' + idToBe + '}';
 
 		result += '>';
 
@@ -240,10 +244,12 @@ function Snapshooter(root) {
 		idCounter = 1;
 
 		clone.setAttribute('id', createID(clone));
+		clone.setAttribute('className', `{style.${clone.getAttribute("id")}}`);
 
 		for (i = 0, l = descendants.length; i < l; i++) {
 			descendant = descendants[i];
 			descendant.setAttribute('id', createID(descendant));
+			descendant.setAttribute('className', `{style.${descendant.getAttribute("id")}}`);
 			relativeURLsToAbsoluteURLs(descendant);
 		}
 

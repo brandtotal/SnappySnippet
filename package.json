@@ -20,5 +20,8 @@
     "grunt-contrib-csslint": "~0.2.0",
     "grunt-zip": "~0.13.0",
     "grunt-html": "^5.0.0"
+  },
+  "devDependencies": {
+    "grunt-cli": "^1.2.0"
   }
 }

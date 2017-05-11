@@ -172,7 +172,6 @@
 		if (!lastSnapshot) {
 			return;
 		}
-
 		var styles = lastSnapshot.css,
 			html = lastSnapshot.html,
 			prefix = "";
@@ -198,11 +197,14 @@
 			styles = sameRulesCombiner.process(styles);
 		}
 
+
 		if (fixHTMLIndentationInput.is(':checked')) {
 			html = $.htmlClean(html, {
-				removeAttrs: ['class'],
+				removeAttrs: ['class', 'id', 'tabindex'],
 				allowedAttributes: [
-					['id'],
+					['className'],
+					['classname'],
+					// ['id'],
 					['placeholder', ['input', 'textarea']],
 					['disabled', ['input', 'textarea', 'select', 'option', 'button']],
 					['value', ['input', 'button']],
@@ -214,7 +216,7 @@
 				format: true,
 				replace: [],
 				replaceStyles: [],
-				allowComments: true
+				allowComments: false
 			});
 		}
 
@@ -225,8 +227,15 @@
 		}
 
 		//replacing prefix placeholder used in all IDs with actual prefix
-		html = html.replace(/:snappysnippet_prefix:/g, prefix);
-		styles = styles.replace(/:snappysnippet_prefix:/g, prefix);
+		html = html.replace(/:snappysnippet_prefix:/g, prefix)
+			.replace(/classname/g, "className")
+			.replace(/className\=\"([^"]*)\"/g, "className=$1")
+			// local bug(?)
+			.replace('>&quot;}"', "");
+
+		styles = styles.replace(/:snappysnippet_prefix:/g, prefix)
+			.replace(/content: '"' '"';/g, "content: '';")
+			.replace(/content: '""';/g, "content: '';");
 
 		htmlTextarea.val(html);
 		cssTextarea.val(styles);

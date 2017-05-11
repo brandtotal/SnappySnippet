@@ -29,7 +29,7 @@ function CSSStringifier() {
 		}
 
 		for (i = 0, l = ids.length; i < l; i++) {
-			idString = '#' + ids[i];
+			idString = '.' + ids[i];
 			if (pseudoElement) {
 				idString += pseudoElement;
 			}
